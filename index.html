@@ -79,6 +79,14 @@ nav{
   width:90%;
 }
 
+.modal img{
+  width:100%;
+  max-width:300px;
+  height:auto;
+  margin-top:15px;
+  border-radius:16px;
+}
+
 .modal.animate{
   animation:modalIn 0.6s ease forwards;
 }
@@ -369,7 +377,7 @@ function answer(yes){
     content.innerHTML = `
       <h3>Afinal valeu o esforço aqui do analfabeto...</h3>
       <p>Agora manda-me foto da tua excelente decisão 🙃</p>
-      <img src="imgs/pedro.png" width="350">
+      <img src="imgs/pedro.png">
     `;
   }else{
     content.innerHTML = `

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Churro Game PRO 🎯</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+
+body{
+  background:linear-gradient(135deg,#ffd6e0,#ffe7b3);
+  overflow:hidden;
+}
+
+nav{
+  display:flex;
+  justify-content:center; /* centra horizontal */
+  align-items:center;     /* centra vertical */
+  padding:15px;
+  background:rgba(255,255,255,0.7);
+  backdrop-filter:blur(10px);
+}
+
+.nav-content{
+  display:flex;
+  align-items:center;
+  gap:10px; /* espaço entre imagem e texto */
+}
+
+.nav-content img{
+  width:20px;
+  height:20px;
+}
+
+.ui{
+  display:flex;justify-content:space-between;padding:10px 20px;font-weight:600;
+}
+
+.game{
+  position:relative;
+  width:100%;
+  height:calc(100vh - 120px);
+  overflow:hidden;
+}
+
+.item{
+  position:absolute;
+  width:60px;
+  will-change:transform;
+  cursor:pointer;
+}
+
+.particle{
+  position:absolute;
+  width:6px;height:6px;
+  border-radius:50%;
+  background:white;
+}
+
+/* OVERLAY */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(8px);
+  display:flex;justify-content:center;align-items:center;
+  z-index:10;
+}
+
+/* MODAL */
+.modal{
+  background:white;
+  padding:40px;
+  border-radius:24px;
+  text-align:center;
+  max-width:500px;
+  width:90%;
+}
+
+.modal.animate{
+  animation:modalIn 0.6s ease forwards;
+}
+
+@keyframes modalIn{
+  0%{opacity:0;transform:translateY(40px) scale(0.9);}
+  60%{opacity:1;transform:translateY(-10px) scale(1.02);}
+  100%{opacity:1;transform:translateY(0) scale(1);}
+}
+
+button{
+  margin:8px;
+  padding:12px 20px;
+  border:none;border-radius:12px;
+  background:#ff7aa2;color:white;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{transform:scale(1.08)}
+
+.small-btn{
+  margin-top:15px;
+  font-size:12px;
+  padding:6px 12px;
+  background:#ddd;
+  color:#333;
+}
+
+.buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+
+.buttons button{
+  flex:1;
+  min-width:120px;
+}
+
+.hidden{display:none}
+
+.music-btn{
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  background:#fff;
+  padding:10px;
+  border-radius:50%;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="nav-content">
+    <img src="./imgs/churro.png" alt="Churro">
+    <span>Catarina Churra</span>
+  </div>
+</nav>
+
+<div class="ui">
+  <div>Score: <span id="score">0</span></div>
+  <div>Tempo: <span id="time">60</span>s</div>
+</div>
+
+<div class="game" id="game"></div>
+
+<div class="music-btn" onclick="toggleMusic()">🎵</div>
+
+<audio id="bgMusic" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b3e4c.mp3">
+</audio>
+
+<!-- TUTORIAL -->
+<div class="overlay" id="tutorial">
+  <div class="modal animate">
+    <h2>🎯 Objetivo</h2>
+    <p>Faz 100 pontos em menos de 60 segundos!</p>
+    <p>Churros (+3)</p>
+    <p>Outros (-1)</p>
+    <button onclick="startGame()">Começar</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div class="overlay hidden" id="final">
+  <div class="modal" id="finalContent"></div>
+</div>
+
+<script>
+let score=0;
+let time=60;
+let running=false;
+let items=[];
+let timerInterval;
+
+const game=document.getElementById("game");
+
+/* AUDIO */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.frequency.value = type==="good" ? 700 : 200;
+  gain.gain.value = 0.08;
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.08);
+}
+
+/* MUSIC */
+function toggleMusic(){
+  const music=document.getElementById("bgMusic");
+  music.paused ? music.play() : music.pause();
+}
+
+/* START */
+function startGame(){
+  document.getElementById("tutorial").style.display="none";
+  running=true;
+  document.getElementById("bgMusic").play();
+
+  spawnLoop();
+  loop();
+
+  timerInterval = setInterval(()=>{
+    time--;
+    document.getElementById("time").textContent=time;
+
+    if(time<=0){
+      endGame(false);
+    }
+  },1000);
+}
+
+/* SPAWN */
+function spawnLoop(){
+  if(!running) return;
+  spawnItem();
+  setTimeout(spawnLoop,300+Math.random()*400);
+}
+
+function spawnItem(){
+  const types=[
+
+    {src:"imgs/churro.png",good:true},
+    {src:"imgs/cinnamon-roll.png",good:false},
+    {src:"imgs/ice-cream.png",good:false}
+  ];
+
+  const t=types[Math.floor(Math.random()*types.length)];
+
+  const el=document.createElement("img");
+  el.src=t.src;
+  el.className="item";
+
+  const rect=game.getBoundingClientRect();
+
+  const obj={
+    el,
+    x:Math.random()*(rect.width-60),
+    y:-80,
+    speed:2+Math.random()*2,
+    good:t.good,
+    dead:false
+  };
+
+  el.style.transform=`translate(${obj.x}px, ${obj.y}px)`;
+
+  el.onclick=()=>{
+    if(obj.dead) return;
+
+    if(obj.good){
+      score+=3;
+      playSound("good");
+      particles(obj.x,obj.y);
+    }else{
+      score--;
+      playSound("bad");
+    }
+
+    document.getElementById("score").textContent=score;
+
+    obj.dead=true;
+    el.remove();
+
+    if(score>=100){
+      endGame(true);
+    }
+  };
+
+  game.appendChild(el);
+  items.push(obj);
+}
+
+/* LOOP */
+function loop(){
+  if(!running) return;
+
+  const rect=game.getBoundingClientRect();
+
+  items.forEach(obj=>{
+    if(obj.dead) return;
+
+    obj.y+=obj.speed;
+    obj.el.style.transform=`translate(${obj.x}px, ${obj.y}px)`;
+
+    if(obj.y>rect.height){
+      obj.dead=true;
+      obj.el.remove();
+    }
+  });
+
+  items=items.filter(i=>!i.dead);
+
+  requestAnimationFrame(loop);
+}
+
+/* PARTICLES */
+function particles(x,y){
+  for(let i=0;i<8;i++){
+    const p=document.createElement("div");
+    p.className="particle";
+    p.style.left=x+"px";
+    p.style.top=y+"px";
+    game.appendChild(p);
+
+    const dx=(Math.random()-0.5)*80;
+    const dy=(Math.random()-0.5)*80;
+
+    p.animate([
+      {transform:"translate(0,0)",opacity:1},
+      {transform:`translate(${dx}px,${dy}px)`,opacity:0}
+    ],{duration:400});
+
+    setTimeout(()=>p.remove(),400);
+  }
+}
+
+/* END */
+function endGame(win){
+  running=false;
+  clearInterval(timerInterval);
+
+  const final = document.getElementById("final");
+  const content = document.getElementById("finalContent");
+
+  final.classList.remove("hidden");
+
+  if(win){
+    content.innerHTML = `
+      <h3>Se passaste este jogo extremamente difícil…</h3>
+      <p>Significa que agora mais facilmente aceitas ir jantar comigo?</p>
+
+      <div class="buttons">
+        <button onclick="answer(true)">Claro que sim</button>
+        <button onclick="answer(true)">Sim</button>
+        <button onclick="answer(false)">Não</button>
+      </div>
+    `;
+  }else{
+    content.innerHTML = `
+      <h3>Foste fraquinha</h3>
+      <p>Tenta outra vez</p>
+      <button onclick="restart()">Restart</button>
+    `;
+  }
+
+  content.classList.remove("animate");
+  void content.offsetWidth;
+  content.classList.add("animate");
+}
+
+/* ANSWER */
+function answer(yes){
+  const content=document.getElementById("finalContent");
+
+  if(yes){
+    content.innerHTML = `
+      <h3>Afinal valeu o esforço aqui do analfabeto...</h3>
+      <p>Agora manda-me foto da tua excelente decisão 🙃</p>
+      <img src="imgs/pedro.png" width="350">
+    `;
+  }else{
+    content.innerHTML = `
+      <h3>😢</h3>
+      <img src="https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif" width="220"> <br>
+      <button class="small-btn" onclick="restart()">Restart</button>
+    `;
+  }
+
+  content.classList.remove("animate");
+  void content.offsetWidth;
+  content.classList.add("animate");
+}
+
+/* RESTART */
+function restart(){
+  location.reload();
+}
+</script>
+
+</body>
+</html>

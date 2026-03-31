@@ -17,8 +17,8 @@ body{
 
 nav{
   display:flex;
-  justify-content:center; /* centra horizontal */
-  align-items:center;     /* centra vertical */
+  justify-content:center;
+  align-items:center;
   padding:15px;
   background:rgba(255,255,255,0.7);
   backdrop-filter:blur(10px);
@@ -27,7 +27,7 @@ nav{
 .nav-content{
   display:flex;
   align-items:center;
-  gap:10px; /* espaço entre imagem e texto */
+  gap:10px;
 }
 
 .nav-content img{
@@ -81,10 +81,21 @@ nav{
 
 .modal img{
   width:100%;
-  max-width:300px;
+  max-width:280px;
   height:auto;
   margin-top:15px;
   border-radius:16px;
+}
+
+/* MOBILE */
+@media (max-width:480px){
+  .modal{
+    padding:25px;
+  }
+
+  .modal img{
+    max-width:220px;
+  }
 }
 
 .modal.animate{
@@ -146,7 +157,7 @@ button:hover{transform:scale(1.08)}
 
 <nav>
   <div class="nav-content">
-    <img src="./imgs/churro.png" alt="Churro">
+    <img src="./imgs/churro.png">
     <span>Catarina Churra</span>
   </div>
 </nav>
@@ -164,7 +175,6 @@ button:hover{transform:scale(1.08)}
   <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b3e4c.mp3">
 </audio>
 
-<!-- TUTORIAL -->
 <div class="overlay" id="tutorial">
   <div class="modal animate">
     <h2>🎯 Objetivo</h2>
@@ -175,7 +185,6 @@ button:hover{transform:scale(1.08)}
   </div>
 </div>
 
-<!-- FINAL -->
 <div class="overlay hidden" id="final">
   <div class="modal" id="finalContent"></div>
 </div>
@@ -188,6 +197,7 @@ let items=[];
 let timerInterval;
 
 const game=document.getElementById("game");
+const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
 /* AUDIO */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -206,13 +216,11 @@ function playSound(type){
   osc.stop(audioCtx.currentTime + 0.08);
 }
 
-/* MUSIC */
 function toggleMusic(){
   const music=document.getElementById("bgMusic");
   music.paused ? music.play() : music.pause();
 }
 
-/* START */
 function startGame(){
   document.getElementById("tutorial").style.display="none";
   running=true;
@@ -234,13 +242,15 @@ function startGame(){
 /* SPAWN */
 function spawnLoop(){
   if(!running) return;
+
   spawnItem();
-  setTimeout(spawnLoop,300+Math.random()*400);
+
+  let baseDelay = isMobile ? 200 : 350; // MAIS RÁPIDO NO MOBILE
+  setTimeout(spawnLoop, baseDelay + Math.random()*200);
 }
 
 function spawnItem(){
   const types=[
-
     {src:"imgs/churro.png",good:true},
     {src:"imgs/cinnamon-roll.png",good:false},
     {src:"imgs/ice-cream.png",good:false}
@@ -258,7 +268,7 @@ function spawnItem(){
     el,
     x:Math.random()*(rect.width-60),
     y:-80,
-    speed:2+Math.random()*2,
+    speed:(isMobile ? 3 : 2) + Math.random()*2, // MAIS RÁPIDO NO MOBILE
     good:t.good,
     dead:false
   };
@@ -269,7 +279,7 @@ function spawnItem(){
     if(obj.dead) return;
 
     if(obj.good){
-      score+=3;
+      score+=50;
       playSound("good");
       particles(obj.x,obj.y);
     }else{
@@ -291,7 +301,6 @@ function spawnItem(){
   items.push(obj);
 }
 
-/* LOOP */
 function loop(){
   if(!running) return;
 
@@ -314,7 +323,6 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-/* PARTICLES */
 function particles(x,y){
   for(let i=0;i<8;i++){
     const p=document.createElement("div");
@@ -335,7 +343,6 @@ function particles(x,y){
   }
 }
 
-/* END */
 function endGame(win){
   running=false;
   clearInterval(timerInterval);
@@ -369,7 +376,6 @@ function endGame(win){
   content.classList.add("animate");
 }
 
-/* ANSWER */
 function answer(yes){
   const content=document.getElementById("finalContent");
 
@@ -382,7 +388,8 @@ function answer(yes){
   }else{
     content.innerHTML = `
       <h3>😢</h3>
-      <img src="https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif" width="220"> <br>
+      <img src="https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif">
+      <br>
       <button class="small-btn" onclick="restart()">Restart</button>
     `;
   }
@@ -392,7 +399,6 @@ function answer(yes){
   content.classList.add("animate");
 }
 
-/* RESTART */
 function restart(){
   location.reload();
 }

@@ -13,6 +13,7 @@
 body{
   background:linear-gradient(135deg,#ffd6e0,#ffe7b3);
   overflow:hidden;
+  touch-action:manipulation; /* evita comportamentos estranhos no mobile */
 }
 
 nav{
@@ -60,7 +61,6 @@ nav{
   background:white;
 }
 
-/* OVERLAY */
 .overlay{
   position:fixed;inset:0;
   background:rgba(0,0,0,0.5);
@@ -69,7 +69,6 @@ nav{
   z-index:10;
 }
 
-/* MODAL */
 .modal{
   background:white;
   padding:40px;
@@ -87,15 +86,9 @@ nav{
   border-radius:16px;
 }
 
-/* MOBILE */
 @media (max-width:480px){
-  .modal{
-    padding:25px;
-  }
-
-  .modal img{
-    max-width:220px;
-  }
+  .modal{padding:25px;}
+  .modal img{max-width:220px;}
 }
 
 .modal.animate{
@@ -197,7 +190,6 @@ let items=[];
 let timerInterval;
 
 const game=document.getElementById("game");
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
 /* AUDIO */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -245,7 +237,7 @@ function spawnLoop(){
 
   spawnItem();
 
-  let baseDelay = isMobile ? 200 : 350; // MAIS RÁPIDO NO MOBILE
+  let baseDelay = 300; // FIXO (sem diferença mobile)
   setTimeout(spawnLoop, baseDelay + Math.random()*200);
 }
 
@@ -268,7 +260,7 @@ function spawnItem(){
     el,
     x:Math.random()*(rect.width-60),
     y:-80,
-    speed:(isMobile ? 3 : 2) + Math.random()*2, // MAIS RÁPIDO NO MOBILE
+    speed:2.5 + Math.random()*1.5, // FIXO (sem mobile boost)
     good:t.good,
     dead:false
   };
@@ -279,7 +271,7 @@ function spawnItem(){
     if(obj.dead) return;
 
     if(obj.good){
-      score+=3;
+      score+=50;
       playSound("good");
       particles(obj.x,obj.y);
     }else{
